@@ -1,5 +1,4 @@
 # Final-Project
-MSc Health Data Analytics and Machine Learing 
 
 In association with Imperial College London and Visa Europe 
 
