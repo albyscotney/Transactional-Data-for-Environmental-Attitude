@@ -1,6 +1,6 @@
 # Final-Project
 
-In association with Imperial College London and Visa Europe 
+In association with Visa Europe and Imperial College London
 
 View Writeup Here: https://www.overleaf.com/read/kgxqkbymnndz
 
