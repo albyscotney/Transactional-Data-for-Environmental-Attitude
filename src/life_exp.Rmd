@@ -1,0 +1,108 @@
+---
+title: "life_exp_lad"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library('readxl');library('ggplot2');library('sf');library('dplyr')
+
+setwd("~/Documents/University - Imperial/Final Project")
+LifeExp <- read_excel('dat/life_expectancy.xlsx') # Avg male and female at birth, 2019 used as more complete results
+Codes <- read_excel('dat/areacodes.xls')
+Shapes <- st_read('dat/LAD/LAD_DEC_2021_GB_BFC.shp')
+HappyDat <- read_excel('dat/happiness.xlsx')
+Co2 <- read.csv('dat/co2byarea.csv')
+StillBirths <- read_excel('dat/stillbirths.xlsx')
+head(LifeExp)
+head(Codes)
+head(Shapes)
+```
+Process the data
+
+```{r}
+LifeExp <- LifeExp[c(1,2,19)]
+head(LifeExp)
+dim(LifeExp)
+LifeExp <- LifeExp[- grep("W", LifeExp$AREACD),] # Remove welsh to speed up processing
+LifeExp <- LifeExp[- grep("S", LifeExp$AREACD),] # Remove scottish
+dim(LifeExp)
+```
+
+Process the codes
+
+```{r}
+head(Codes)
+Codes <- Codes[c(1,2,4)]
+```
+
+Join codes to life expectancy
+
+```{r}
+BigDat <- merge(Codes, LifeExp, by.x = 'la_code', by.y = 'AREACD', all = T)
+head(BigDat)
+```
+Select london and join on the shapes 
+
+```{r}
+BigDat <- BigDat %>% filter(region_name == 'London')
+BigDat <- merge(BigDat, Shapes, by.x = 'la_code', by.y = 'LAD21CD', all.x = TRUE, all.y = FALSE)
+head(BigDat)
+names(BigDat)[5] = 'life_expectancy'
+BigDat
+```
+
+Plot!
+
+```{r}
+ggplot(data = BigDat) +
+  geom_sf(aes(geometry = geometry, fill = life_expectancy)) +
+  scale_fill_distiller(na.value = 'Yellow') +
+  theme_void()
+```
+
+Happiness
+```{r}
+HappyDat <- HappyDat[c(1,9)]
+names(HappyDat)[2] <- 'Happiness'
+NewBigDat <- merge(BigDat, HappyDat, by.x = 'la_name', by.y = 'Area Names')
+```
+```{r}
+ggplot(data = NewBigDat) +
+  geom_sf(aes(geometry = geometry, fill = as.numeric(Happiness)))+
+  scale_fill_distiller(na.value = 'Yellow') +
+  theme_void()
+```
+Still births 
+
+
+```{r}
+names(StillBirths)
+StillBirths <- StillBirths[c(1,7)]
+names(StillBirths)[2] <- 'sbr'
+StillBirthDat <- merge(NewBigDat, StillBirths, by.x = 'la_code', by.y = 'Code1')
+```
+
+```{r}
+ggplot(data = StillBirthDat) +
+  geom_sf(aes(geometry = geometry, fill = as.numeric(sbr)))+
+  scale_fill_distiller(na.value = 'Yellow', direction = 1) +
+  theme_void()
+```
+
+CO2
+
+```{r}
+Co3 <- Co2 %>% filter(LA.CO2.Sector == 'Domestic')
+Co3$emissions_per_thousand <- Co3$Territorial.emissions..kt.CO2. / Co3$Mid.year.Population..thousands.
+Co4 <- Co3[c(7,15)]
+x_new = Co4 %>% group_by(Local.Authority.Code) %>% summarise(Co4 = sum(emissions_per_thousand))
+EmissionDat <- merge(NewBigDat, x_new, by.x = 'la_code', by.y = 'Local.Authority.Code')
+```
+
+```{r}
+ggplot(data = EmissionDat) +
+  geom_sf(aes(geometry = geometry, fill = as.numeric(Co4)))+
+  scale_fill_distiller(na.value = 'Yellow', direction = 1) +
+  theme_void()
+```
+

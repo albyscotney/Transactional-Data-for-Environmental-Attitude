@@ -1,0 +1,33 @@
+---
+title: "voting"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library('readxl');library('ggplot2');library('sf');library('dplyr')
+setwd("~/Documents/University - Imperial/Final Project")
+Results <- read_excel('dat/general-election-results-2019.xlsx')
+Shapes <- st_read('dat/constiuencies/Westminster_Parliamentary_Constituencies_(December_2020)_UK_BUC.shp')
+Co2 <- read.csv('dat/co2byarea.csv')
+```
+
+```{r}
+VotingDat <- merge(Results, Shapes, by.x = 'ons_id', by.y = 'PCON20CD')
+```
+
+```{r}
+ggplot(data = VotingDat) +
+  geom_sf(aes(geometry = geometry, fill = as.numeric(Proportion_green)))+
+  scale_fill_distiller(na.value = 'Yellow', direction=1, limits = c(0,0.1)) +
+  theme_void()
+```
+
+
+
+
+```{r}
+Co3 <- Co2 %>% filter(LA.CO2.Sector == 'Domestic')
+Co4 <- Co3[c(7,15)]
+x_new = Co4 %>% group_by(Local.Authority.Code) %>% summarise(Co4 = sum(emissions_per_thousand))
+EmissionDat <- merge(VotingDat, x_new, by.x = )
+```
